@@ -1,5 +1,7 @@
+// Tester for graph structures and their traversal
+
 #include <iostream>
-#include "./AppliedConcepts/Graph.hpp"
+#include "../Graph.hpp"
 
 // Replica of the one featured on wikipedia here:
 // https://en.wikipedia.org/wiki/Depth-first_search
