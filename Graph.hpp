@@ -416,10 +416,11 @@ template<typename NodeData> std::vector<c_GraphNode<NodeData>*> devTraverseDfs_F
 	for (uint32_t i=0; i < degrees; i++) {
 		c_GraphNode<NodeData>* node = start->cnt_out.at(i);
 		if (header->testAdd(node->index)) {
-			output_list.push_back(node);
+			if (searchFunc(start, node))
+				output_list.push_back(node);
 			dequeue = devTraverseDfs_Filt(node, searchFunc, header);
 			for (c_GraphNode<NodeData>* i : dequeue) {
-				if (searchFunc(start, i))
+				if (searchFunc(node, i))
 					output_list.push_back(i);
 			}
 		}
