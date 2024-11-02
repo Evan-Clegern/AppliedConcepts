@@ -132,10 +132,10 @@ struct c_GraphCnt {
 
 //! Helper structure for running the graph-level traversal, so we don't have to make four shared pointer parameters.
 template<typename NodeData> struct c_SearchHeader {
-	// I'm aware this would be more efficient as a <queue> structure, but I wanted to make this code with as few headers as possible.
+	// I'm aware this would be more efficient as a <queue> structure (for BFS), but I wanted to make this code with as few headers as possible, and to support DFS.
 	std::vector<c_GraphNode<NodeData>*> visit_queue;
 	std::vector<uint32_t> idx_visited;
-	uint32_t min_idx = 4294967293, max_idx = 0; // init with a value higher than max supported, so it always goes down
+	uint32_t min_idx = 4294967293, max_idx = 0;
 	//! Returns TRUE if the index has not been visited, and then adds the index to the list. Returns FALSE if the index has been visited.
 	bool testAdd(uint32_t index) {
 		if (index > max_idx) {
@@ -404,6 +404,7 @@ template<typename NodeData> std::vector<c_GraphNode<NodeData>*> devTraverseDfs_F
 	
 	uint32_t degrees = start->externalDegree();
 
+	// We add this node before traversing as far as possible
 	if (header->testAdd(start->index)) {
 		if (searchFunc(nullptr, start)) {
 			output_list.push_back(start);
@@ -417,7 +418,6 @@ template<typename NodeData> std::vector<c_GraphNode<NodeData>*> devTraverseDfs_F
 				output_list.push_back(node);
 			dequeue = devTraverseDfs_Filt(node, searchFunc, header);
 			for (c_GraphNode<NodeData>* i : dequeue) {
-				// This level doesn't need filtering, since the filter is already applied to recursive calls above.
 				output_list.push_back(i);
 			}
 		}
@@ -503,6 +503,10 @@ public:
 		}
 		return largest;
 	}
+	//! Allows read-only access to the connections vector.
+	const std::vector<c_GraphCnt>& viewConnections() const noexcept {
+		return this->calc_cnts;
+	}
 	
 	/********!
 	 * @date	30 October 2024
@@ -580,7 +584,6 @@ public:
 			uint32_t minidx = -1, maxidx = 0;
 			for (c_GraphNode<NodeData>* node : tmp->cnt_out) {
 				bool good = true;
-				uint32_t erridx = 0;
 				// See if we can avoid the expensive iteration loop by seeing if it's out of (existing) range.
 				if (node->index < minidx) {
 					minidx = node->index;
@@ -590,7 +593,6 @@ public:
 					for (uint32_t j : marked) {
 						if (node->index == j) {
 							good = false;
-							erridx = j;
 							break;
 						}
 					}
@@ -616,7 +618,7 @@ public:
 	 * @brief
 	 *  	Traverses the entire Graph in a Breadth-First Search fashion from the indicated initial node; that is, it will
 	 * 		sequentially register the directed connections from each node, and then search through each of those connection's
-	 * 		target node, until all possible paths have been traversed.
+	 * 		target node, until all possible paths have been traversed. Performed on a node basis.
 	 * @param [in] index_start
 	 *  	The node index (ID) to begin the BFS from.
 	 * @return
@@ -637,6 +639,7 @@ public:
 	 *  	Traverses the entire Graph in a Breadth-First Search fashion from the indicated initial node; that is, it will
 	 * 		sequentially register the directed connections from each node, and then search through each of those connection's
 	 * 		target node, until all possible paths have been traversed. Filters the output results based on the searchFunc.
+	 *  	Performed on a node basis.
 	 * @param [in] index_start
 	 *  	The node index (ID) to begin the BFS from.
 	 * @param [in] searchFunc
@@ -660,7 +663,7 @@ public:
 	 * @date	2 November 2024
 	 * @brief
 	 *  	Traverses the entire Graph in a Depth-First Search fashion from the indicated initial node; that is, it will try
-	 *  	to completely traverse all of a node's connections as soon as it is added to the output list.
+	 *  	to completely traverse all of a node's connections as soon as it is added to the output list. Performed on a node basis.
 	 * @param [in] index_start
 	 *  	The node index (ID) to begin the DFS from.
 	 * @return
@@ -680,7 +683,7 @@ public:
 	 * @brief
 	 *  	Traverses the entire Graph in a Depth-First Search fashion from the indicated initial node; that is, it will try
 	 *  	to completely traverse all of a node's connections as soon as it is added to the output list.  Filters the output
-	 *  	results based on the searchFunc.
+	 *  	results based on the searchFunc. Performed on a node basis.
 	 * @param [in] index_start
 	 *  	The node index (ID) to begin the DFS from.
 	 * @param [in] searchFunc
