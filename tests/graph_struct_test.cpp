@@ -1,7 +1,5 @@
-// Tester for graph structures and their traversal
-
 #include <iostream>
-#include "../Graph.hpp"
+#include "./AppliedConcepts/Graph.hpp"
 
 // Replica of the one featured on wikipedia here:
 // https://en.wikipedia.org/wiki/Depth-first_search
@@ -34,6 +32,12 @@ GraphStruct::c_Graph<uint8_t> testgraph_hi(10, {
 	{19, 20}
 });
 
+// give me only the odd numbors
+bool filtfnc(GraphStruct::c_GraphNode<uint8_t>* last, GraphStruct::c_GraphNode<uint8_t>* current) {
+	if (current->index & 1) return true;
+	return false;
+}
+
 int main() {
 	std::cout << "Starting traversal attempts.\n";
 	auto output_traversal = testgraph_lo.runDepthFirst(1);
@@ -42,7 +46,7 @@ int main() {
 		std::cout << i->index << ' ';
 	}
 	std::cout << '\n' << std::flush;
-	output_traversal = testgraph_lo.runBreadthFirst(1);
+	output_traversal = testgraph_lo.runBreadthFirst(1, filtfnc);
 	std::cout << "Output is size " << output_traversal.size() << '\n';
 	for (GraphStruct::c_GraphNode<uint8_t>* i : output_traversal) {
 		std::cout << i->index << ' ';
@@ -55,7 +59,7 @@ int main() {
 		std::cout << i->index << ' ';
 	}
 	std::cout << '\n' << std::flush;
-	output_traversal = testgraph_hi.runBreadthFirst(1);
+	output_traversal = testgraph_hi.runBreadthFirst(1, filtfnc);
 	std::cout << "Output is size " << output_traversal.size() << '\n';
 	for (GraphStruct::c_GraphNode<uint8_t>* i : output_traversal) {
 		std::cout << i->index << ' ';
