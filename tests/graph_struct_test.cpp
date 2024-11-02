@@ -39,28 +39,28 @@ bool filtfnc(GraphStruct::c_GraphNode<uint8_t>* last, GraphStruct::c_GraphNode<u
 }
 
 int main() {
-	std::cout << "Starting traversal attempts.\n";
+	std::cout << "Smaller graph traversals:\n";
 	auto output_traversal = testgraph_lo.runDepthFirst(1);
-	std::cout << "Output is size " << output_traversal.size() << '\n';
+	std::cout << "Output (STANDARD) is size " << output_traversal.size() << '\n';
 	for (GraphStruct::c_GraphNode<uint8_t>* i : output_traversal) {
 		std::cout << i->index << ' ';
 	}
 	std::cout << '\n' << std::flush;
 	output_traversal = testgraph_lo.runBreadthFirst(1, filtfnc);
-	std::cout << "Output is size " << output_traversal.size() << '\n';
+	std::cout << "Output (FILTERED) is size " << output_traversal.size() << '\n';
 	for (GraphStruct::c_GraphNode<uint8_t>* i : output_traversal) {
 		std::cout << i->index << ' ';
 	}
-	std::cout << '\n' << '\n' << std::flush;
+	std::cout << "\n\nLarger graph traversals:\n" << std::flush;
 	
-	output_traversal = testgraph_hi.runDepthFirst(1);
-	std::cout << "Output is size " << output_traversal.size() << '\n';
+	output_traversal = testgraph_hi.runDepthFirst(1,  filtfnc);
+	std::cout << "Output (FILTERED) is size " << output_traversal.size() << '\n';
 	for (GraphStruct::c_GraphNode<uint8_t>* i : output_traversal) {
 		std::cout << i->index << ' ';
 	}
 	std::cout << '\n' << std::flush;
-	output_traversal = testgraph_hi.runBreadthFirst(1, filtfnc);
-	std::cout << "Output is size " << output_traversal.size() << '\n';
+	output_traversal = testgraph_hi.runBreadthFirst(1);
+	std::cout << "Output (STANDARD) is size " << output_traversal.size() << '\n';
 	for (GraphStruct::c_GraphNode<uint8_t>* i : output_traversal) {
 		std::cout << i->index << ' ';
 	}
