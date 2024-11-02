@@ -633,12 +633,36 @@ public:
 		std::vector<c_GraphNode<NodeData>*> output = devTraverseBfs(start_parent);
 		return output;
 	}
+	/********!
+	 * @date	2 November 2024
+	 * @brief
+	 *  	Traverses the entire Graph in a Breadth-First Search fashion from the indicated initial node; that is, it will
+	 * 		sequentially register the directed connections from each node, and then search through each of those connection's
+	 * 		target node, until all possible paths have been traversed. Filters the output results based on the searchFunc.
+	 * @param [in] index_start
+	 *  	The node index (ID) to begin the BFS from.
+	 * @param [in] searchFunc
+	 *  	The boolean function to use for filtering the output. It must take two parameters: the previously-visited node,
+	 *  	and then the current node in question. The current node will be added to the output vector if this function
+	 *  	returns true. The function must be able to handle nullptr nodes, primarily for handling the topmost node.
+	 * @return
+	 *  	The organized breadth-first pointer vector.
+	 ********/
+	std::vector<c_GraphNode<NodeData>*> runBreadthFirst(uint32_t index_start, bool (* searchFunc)(c_GraphNode<NodeData>*, c_GraphNode<NodeData>*)) {
+		uint32_t init = this->idxMap(index_start);
+		if ((init == 4294967293) || (init == (uint32_t)(-1))) {
+			return {};
+		}
+		c_GraphNode<NodeData>* start_parent = this->raw_ptrs.at(init);
+		std::vector<c_GraphNode<NodeData>*> output = devTraverseBfs_Filt(start_parent, searchFunc);
+		return output;
+	}
 	
 	/********!
 	 * @date	2 November 2024
 	 * @brief
 	 *  	Traverses the entire Graph in a Depth-First Search fashion from the indicated initial node; that is, it will try
-	 *  	to completely traverse all of a node's connections before adding it to the output list.
+	 *  	to completely traverse all of a node's connections as soon as it is added to the output list.
 	 * @param [in] index_start
 	 *  	The node index (ID) to begin the DFS from.
 	 * @return
@@ -651,6 +675,30 @@ public:
 		}
 		c_GraphNode<NodeData>* start_parent = this->raw_ptrs.at(init);
 		std::vector<c_GraphNode<NodeData>*> output = devTraverseDfs(start_parent);
+		return output;
+	}
+	/********!
+	 * @date	2 November 2024
+	 * @brief
+	 *  	Traverses the entire Graph in a Depth-First Search fashion from the indicated initial node; that is, it will try
+	 *  	to completely traverse all of a node's connections as soon as it is added to the output list.  Filters the output
+	 *  	results based on the searchFunc.
+	 * @param [in] index_start
+	 *  	The node index (ID) to begin the DFS from.
+	 * @param [in] searchFunc
+	 *  	The boolean function to use for filtering the output. It must take two parameters: the previously-visited node,
+	 *  	and then the current node in question. The current node will be added to the output vector if this function
+	 *  	returns true. The function must be able to handle nullptr nodes, primarily for handling the topmost node.
+	 * @return
+	 *  	The organized depth-first pointer vector.
+	 ********/
+	std::vector<c_GraphNode<NodeData>*> runDepthFirst(uint32_t index_start, bool (* searchFunc)(c_GraphNode<NodeData>*, c_GraphNode<NodeData>*)) {
+		uint32_t init = this->idxMap(index_start);
+		if ((init == 4294967293) || (init == (uint32_t)(-1))) {
+			return {};
+		}
+		c_GraphNode<NodeData>* start_parent = this->raw_ptrs.at(init);
+		std::vector<c_GraphNode<NodeData>*> output = devTraverseDfs_Filt(start_parent, searchFunc);
 		return output;
 	}
 };
