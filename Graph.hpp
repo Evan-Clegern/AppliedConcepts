@@ -309,7 +309,7 @@ template<typename NodeData> std::vector<c_GraphNode<NodeData>*> devTraverseBfs_F
 		while (dequeue.empty() && !header->visit_queue.empty()) {
 			c_GraphNode<NodeData>* handle = header->visit_queue.at(0);
 			header->visit_queue.erase(header->visit_queue.begin()); // erase that entry BEFORE we call this to prevent recursion
-			dequeue = devTraverseBfs(handle, header);
+			dequeue = devTraverseBfs_Filt(handle, searchFunc, header);
 		}
 		for (c_GraphNode<NodeData>* i : dequeue) {
 			if (i != nullptr) { //this is mostly a sanity check, but still important
@@ -417,7 +417,7 @@ template<typename NodeData> std::vector<c_GraphNode<NodeData>*> devTraverseDfs_F
 		c_GraphNode<NodeData>* node = start->cnt_out.at(i);
 		if (header->testAdd(node->index)) {
 			output_list.push_back(node);
-			dequeue = devTraverseDfs(node, header);
+			dequeue = devTraverseDfs_Filt(node, searchFunc, header);
 			for (c_GraphNode<NodeData>* i : dequeue) {
 				if (searchFunc(start, i))
 					output_list.push_back(i);
