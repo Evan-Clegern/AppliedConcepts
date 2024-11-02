@@ -404,12 +404,9 @@ template<typename NodeData> std::vector<c_GraphNode<NodeData>*> devTraverseDfs_F
 	
 	uint32_t degrees = start->externalDegree();
 
-	// We add this node before traversing as far as possible
 	if (header->testAdd(start->index)) {
-		if (owns_header && searchFunc(nullptr, start)) {
+		if (searchFunc(nullptr, start)) {
 			output_list.push_back(start);
-		} else {
-			output_list.push_back(start); // We'll filter it on the upper level in this version, because of the "two node" search function
 		}
 	}
 	std::vector<c_GraphNode<NodeData>*> dequeue;
@@ -420,8 +417,8 @@ template<typename NodeData> std::vector<c_GraphNode<NodeData>*> devTraverseDfs_F
 				output_list.push_back(node);
 			dequeue = devTraverseDfs_Filt(node, searchFunc, header);
 			for (c_GraphNode<NodeData>* i : dequeue) {
-				if (searchFunc(node, i))
-					output_list.push_back(i);
+				// This level doesn't need filtering, since the filter is already applied to recursive calls above.
+				output_list.push_back(i);
 			}
 		}
 	}
