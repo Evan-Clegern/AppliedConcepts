@@ -163,7 +163,7 @@ template<typename NodeData> struct c_SearchHeader {
 	}
 };
 
-//! Helper function for running a Breadth-First Search from the specified node. Runs recursively!
+//! Helper function for running a Breadth-First traversal from the specified node. Runs recursively!
 template<typename NodeData> std::vector<c_GraphNode<NodeData>*> devTraverseBfs(c_GraphNode<NodeData>* start, c_SearchHeader<NodeData> *recurseHeader = nullptr) {
 	if (start == nullptr) {
 		return {};
@@ -250,6 +250,103 @@ template<typename NodeData> std::vector<c_GraphNode<NodeData>*> devTraverseBfs(c
 	}
 }
 
+
+//! Helper function for running a Breadth-First "Filtered" traversal, from the specified node. Runs recursively!
+//! The function must return TRUE to add it to the output vector, and must take two parameters: the last-level node as the first parameter,  and the currently-tested node as the second.
+//! The search function must be prepared to handle null pointers, almost exclusively for the first node alone ("last-level" will be nullptr).
+template<typename NodeData> std::vector<c_GraphNode<NodeData>*> devTraverseBfs_Filt(c_GraphNode<NodeData>* start, bool (* searchFunc)(c_GraphNode<NodeData>*, c_GraphNode<NodeData>*), c_SearchHeader<NodeData> *recurseHeader = nullptr) {
+	if (start == nullptr) {
+		return {};
+	}
+	std::vector<c_GraphNode<NodeData>*> output_list = {};
+	
+	bool owns_header = false;
+	c_SearchHeader<NodeData> * header = recurseHeader;
+	if (header == nullptr) {
+		dbgprint("Header is being created.");
+		header = new c_SearchHeader<NodeData>;
+		owns_header = true;
+	}
+	
+	uint32_t degrees = start->externalDegree();
+	
+	char iter = '?';
+	if (start->index <= 9) {
+		iter = ('0' + start->index);
+	}
+	if (header->testAdd(start->index)) {
+		if (owns_header) {
+			if (searchFunc(nullptr, start))
+				output_list.push_back(start);
+		}
+		if (start->index <= 9) {
+			char debugprnt[] = "BFS level  ";
+			debugprnt[10] = iter;
+			dbgprint(debugprnt);
+		}
+	}
+	
+	for (uint32_t i=0; i < degrees; i++) {
+		c_GraphNode<NodeData>* node = start->cnt_out.at(i);
+		// Load each node that isn't already registered.
+		if (node != nullptr && header->testAdd(node->index)) {
+			if (i < 10) {
+				char printable[] = " Added degr   from index  ";
+				printable[12] = '0' + i;
+				printable[25] = iter;
+				dbgprint(printable);
+			}
+			if (searchFunc(start, node)) {
+				output_list.push_back(node);
+			}
+			header->visit_queue.push_back(node); // this was the culprit of 20 mins of debugging. forgot to add the node to the queue.
+		}
+	}
+	std::vector<c_GraphNode<NodeData>*> dequeue, newqueue;
+	// Dequeue all pending jobs.
+	do {
+		// Go through all dequeues until one returns new data (skip redundant calls)
+		while (dequeue.empty() && !header->visit_queue.empty()) {
+			c_GraphNode<NodeData>* handle = header->visit_queue.at(0);
+			header->visit_queue.erase(header->visit_queue.begin()); // erase that entry BEFORE we call this to prevent recursion
+			dequeue = devTraverseBfs(handle, header);
+		}
+		for (c_GraphNode<NodeData>* i : dequeue) {
+			if (i != nullptr) { //this is mostly a sanity check, but still important
+				newqueue.push_back(i);
+				// We've already tested anything that gets returned.
+				output_list.push_back(i);
+			}
+		}
+		dequeue.clear();
+		// Exclusively for the "owner" level, keep dequeueing until physically empty.
+		// Recursive ones will break once the visit_queue empties
+		if (owns_header && header->visit_queue.empty() && !newqueue.empty()) {
+			header->visit_queue = newqueue;
+			if (newqueue.size() < 10) {
+				char tmpextra[] = "Adding new queue of size  ";
+				tmpextra[25] = '0' + newqueue.size();
+				dbgprint(tmpextra);
+			} else {
+				dbgprint("Adding big queue.");
+			}
+			newqueue = {};
+		}
+	} while (!header->visit_queue.empty());
+	if (owns_header) {
+		delete header;
+		return output_list;
+	} else {
+		// Assign the next level's queue (the collected nodes from dequeueing this level)
+		if (!newqueue.empty()) {
+			dbgprint("Leaving a level.");
+			header->visit_queue = newqueue;
+		}
+		return output_list;
+	}
+}
+
+//! Runs a Depth-First traversal from the specified node.
 template<typename NodeData> std::vector<c_GraphNode<NodeData>*> devTraverseDfs(c_GraphNode<NodeData>* start, c_SearchHeader<NodeData>* recurseHeader = nullptr) {
 	if (start == nullptr) {
 		return {};
@@ -278,6 +375,52 @@ template<typename NodeData> std::vector<c_GraphNode<NodeData>*> devTraverseDfs(c
 			dequeue = devTraverseDfs(node, header);
 			for (c_GraphNode<NodeData>* i : dequeue) {
 				output_list.push_back(i);
+			}
+		}
+	}
+	if (owns_header) {
+		delete header;
+	}
+	return output_list;
+}
+
+
+//! Runs a Depth-First filtered traversal from the specified node.
+//! The function must return TRUE to add it to the output vector, and must take two parameters: the last-level node as the first parameter,  and the currently-tested node as the second.
+//! The search function must be prepared to handle null pointers, almost exclusively for the first node alone ("last-level" will be nullptr).
+template<typename NodeData> std::vector<c_GraphNode<NodeData>*> devTraverseDfs_Filt(c_GraphNode<NodeData>* start, bool (* searchFunc)(c_GraphNode<NodeData>*, c_GraphNode<NodeData>*), c_SearchHeader<NodeData>* recurseHeader = nullptr) {
+	if (start == nullptr) {
+		return {};
+	}
+	std::vector<c_GraphNode<NodeData>*> output_list = {};
+	
+	bool owns_header = false;
+	c_SearchHeader<NodeData> * header = recurseHeader;
+	if (header == nullptr) {
+		dbgprint("Header is being created.");
+		header = new c_SearchHeader<NodeData>;
+		owns_header = true;
+	}
+	
+	uint32_t degrees = start->externalDegree();
+
+	// We add this node before traversing as far as possible
+	if (header->testAdd(start->index)) {
+		if (owns_header && searchFunc(nullptr, start)) {
+			output_list.push_back(start);
+		} else {
+			output_list.push_back(start); // We'll filter it on the upper level in this version, because of the "two node" search function
+		}
+	}
+	std::vector<c_GraphNode<NodeData>*> dequeue;
+	for (uint32_t i=0; i < degrees; i++) {
+		c_GraphNode<NodeData>* node = start->cnt_out.at(i);
+		if (header->testAdd(node->index)) {
+			output_list.push_back(node);
+			dequeue = devTraverseDfs(node, header);
+			for (c_GraphNode<NodeData>* i : dequeue) {
+				if (searchFunc(start, i))
+					output_list.push_back(i);
 			}
 		}
 	}
